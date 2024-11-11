@@ -62,37 +62,74 @@ qa_pairs = [
      "answer": "Seseorang yang membuat aduan atau memberikan apa-apa maklumat tentang suatu perlakuan jenayah syariah hendaklah memberikan secara benar dan jika didapati aduan yang diberikan itu palsu maka pengadu boleh disabitkan dengan suatu kesalahan menurut Seksyen 211 Enakmen Tatacara Jenayah Syariah Negeri Selangor No. 3 Tahun 2003."}
 ]
 
-
-
 # Embed Q&A pairs into FAISS vector store
 def get_vector_store(qa_pairs):
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")  # type: ignore
-    chunks = [f"{qa['question']} {qa['answer']}" for qa in qa_pairs]
-    vector_store = FAISS.from_texts(chunks, embedding=embeddings)
-    vector_store.save_local("faiss_qa_index")
+    try:
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        texts = []
+        metadatas = []
+        
+        for qa in qa_pairs:
+            # Store only the question for better matching
+            texts.append(qa['question'])
+            metadatas.append({
+                "answer": qa['answer'],
+                "question": qa['question']
+            })
+        
+        vector_store = FAISS.from_texts(texts, embedding=embeddings, metadatas=metadatas)
+        vector_store.save_local("faiss_qa_index")
+        return True
+    except Exception as e:
+        print(f"Error in get_vector_store: {e}")
+        return False
 
-
-# Handle user input
 def user_input(user_question):
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")  # type: ignore
-    db = FAISS.load_local("faiss_qa_index", embeddings, allow_dangerous_deserialization=True)
-    docs = db.similarity_search(user_question)
-
-    # Return the most relevant answer
-    if docs:
-        response_text = docs[0].page_content.split(" ", 1)[1]  # Extract the answer part
-        return response_text
-    else:
-        return "Maaf, saya tidak dapat menemukan jawapan untuk soalan anda."
-
+    try:
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        db = FAISS.load_local("faiss_qa_index", embeddings, allow_dangerous_deserialization=True)
+        
+        # Get results with scores
+        results = db.similarity_search_with_score(user_question, k=1)
+        
+        if not results:
+            return "Maaf, saya tidak dapat menemukan jawapan untuk soalan anda."
+        
+        doc, score = results[0]
+        
+        # Convert score to similarity (0-1 scale where 1 is perfect match)
+        similarity = 1.0 - score
+        
+        # Debug info
+        print(f"Question: {user_question}")
+        print(f"Matched question: {doc.metadata.get('question')}")
+        print(f"Similarity score: {similarity}")
+        
+        # Strict similarity threshold
+        if similarity < 0.5:  # Adjust this threshold as needed
+            return "Maaf, saya tidak dapat menemukan jawapan untuk soalan anda."
+            
+        return doc.metadata.get('answer')
+        
+    except Exception as e:
+        print(f"Error in user_input: {e}")
+        return "Maaf, terdapat masalah teknikal. Sila cuba lagi."
 
 def main():
-    st.set_page_config(page_title="Q&A Chatbot", page_icon="🤖")
-    st.title("Q&A Chatbot")
+    st.set_page_config(page_title="Chatbot Soal Jawab", page_icon="🤖")
+    st.title("Chatbot Soal Jawab Undang-Undang Syariah")
     st.write("Tanya saya soalan mengenai undang-undang syariah.")
 
+    # Add debug mode toggle
+    if 'debug_mode' not in st.session_state:
+        st.session_state.debug_mode = False
+        
+    st.sidebar.checkbox("Debug Mode", key="debug_mode")
+
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "assistant", "content": "Tanya saya apa-apa soalan."}]
+        st.session_state.messages = [
+            {"role": "assistant", "content": "Selamat datang! Sila tanya soalan anda mengenai undang-undang syariah."}
+        ]
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -103,16 +140,26 @@ def main():
         with st.chat_message("user"):
             st.write(prompt)
 
-    if st.session_state.messages[-1]["role"] != "assistant":
-        with st.chat_message("assistant"):
-            with st.spinner("Mencari jawapan..."):
-                response = user_input(prompt)
-                st.session_state.messages.append({"role": "assistant", "content": response})
-                st.write(response)
-
+        if st.session_state.messages[-1]["role"] != "assistant":
+            with st.chat_message("assistant"):
+                with st.spinner("Mencari jawapan..."):
+                    response = user_input(prompt)
+                    
+                    # Show debug info if enabled
+                    if st.session_state.debug_mode:
+                        st.write("Debug Info:")
+                        st.write(f"Input: {prompt}")
+                        st.write("Response:", response)
+                        
+                    st.session_state.messages.append({"role": "assistant", "content": response})
+                    st.write(response)
 
 if __name__ == "__main__":
-    # Initialize the vector store with Q&A pairs on first run
-    if not os.path.exists("faiss_qa_index"):
-        get_vector_store(qa_pairs)
+    # Force recreate the index
+    if os.path.exists("faiss_qa_index"):
+        import shutil
+        shutil.rmtree("faiss_qa_index")
+    
+    if not get_vector_store(qa_pairs):
+        st.error("Failed to initialize the system. Please check your configuration.")
     main()
