@@ -88,7 +88,7 @@ def user_input(user_question):
 
 def main():
     st.set_page_config(page_title="Q&A Chatbot", page_icon="🤖")
-    st.title("Legal Q&A Chatbot")
+    st.title("Q&A Chatbot")
     st.write("Tanya saya soalan mengenai undang-undang syariah.")
 
     if "messages" not in st.session_state:
