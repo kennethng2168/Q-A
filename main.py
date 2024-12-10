@@ -130,18 +130,18 @@ def main():
         
         with col1:
             # Use local images.png file
-            st.image("images.png", width=100, caption="JAIS Logo")
+            st.image("images.png", width=100, caption="JAIS")
         
         with col2:
             st.title("Chatbot Soal Jawab Undang-Undang Syariah")
     
     st.write("Tanya saya soalan mengenai undang-undang syariah.")
 
-    # Add debug mode toggle
-    if 'debug_mode' not in st.session_state:
-        st.session_state.debug_mode = False
+    # # Add debug mode toggle
+    # if 'debug_mode' not in st.session_state:
+    #     st.session_state.debug_mode = False
         
-    st.sidebar.checkbox("Debug Mode", key="debug_mode")
+    # st.sidebar.checkbox("Debug Mode", key="debug_mode")
 
     if "messages" not in st.session_state:
         st.session_state.messages = [
