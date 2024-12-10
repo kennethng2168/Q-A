@@ -116,8 +116,25 @@ def user_input(user_question):
         return "Maaf, terdapat masalah teknikal. Sila cuba lagi."
 
 def main():
-    st.set_page_config(page_title="Chatbot Soal Jawab", page_icon="🤖")
-    st.title("Chatbot Soal Jawab Undang-Undang Syariah")
+    # Configure page with logo
+    st.set_page_config(
+        page_title="Chatbot Soal Jawab", 
+        page_icon=":scales:", # Using a legal scales icon as placeholder
+        layout="centered"
+    )
+    
+    # Create a container for header with logo and title
+    header_container = st.container()
+    with header_container:
+        col1, col2 = st.columns([1, 4])
+        
+        with col1:
+            # Placeholder for logo - using a system-generated placeholder image
+            st.image("/images.png", width=100)
+        
+        with col2:
+            st.title("Chatbot Soal Jawab Undang-Undang Syariah")
+    
     st.write("Tanya saya soalan mengenai undang-undang syariah.")
 
     # Add debug mode toggle
