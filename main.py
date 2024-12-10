@@ -162,11 +162,11 @@ def main():
                 with st.spinner("Mencari jawapan..."):
                     response = user_input(prompt)
                     
-                    # Show debug info if enabled
-                    if st.session_state.debug_mode:
-                        st.write("Debug Info:")
-                        st.write(f"Input: {prompt}")
-                        st.write("Response:", response)
+                    # # Show debug info if enabled
+                    # if st.session_state.debug_mode:
+                    #     st.write("Debug Info:")
+                    #     st.write(f"Input: {prompt}")
+                    #     st.write("Response:", response)
                         
                     st.session_state.messages.append({"role": "assistant", "content": response})
                     st.write(response)
