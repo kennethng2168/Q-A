@@ -129,8 +129,8 @@ def main():
         col1, col2 = st.columns([1, 4])
         
         with col1:
-            # Placeholder for logo - using a system-generated placeholder image
-            st.image("/images.png", width=100)
+            # Use local images.png file
+            st.image("images.png", width=100, caption="JAIS Logo")
         
         with col2:
             st.title("Chatbot Soal Jawab Undang-Undang Syariah")
@@ -170,7 +170,6 @@ def main():
                         
                     st.session_state.messages.append({"role": "assistant", "content": response})
                     st.write(response)
-
 if __name__ == "__main__":
     # Force recreate the index
     if os.path.exists("faiss_qa_index"):
